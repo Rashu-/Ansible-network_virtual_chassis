@@ -10,7 +10,7 @@
 
 - name: Configure nxos vpc global settings
   nxos_vpc:
-    domain: "{{ vpc.domain | default('1') }}"
+    domain: "{{ vpc.domain | default(omit) }}"
     state: "{{ vpc.state | default(omit) }}"
     role_priority: "{{ vpc.role_priority | default(omit) }}"
     system_priority: "{{ vpc.system_priority | default(omit) }}"
