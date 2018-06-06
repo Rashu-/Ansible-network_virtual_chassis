@@ -1,0 +1,64 @@
+---
+
+- name: Check network device OS
+  assert:
+    that: >
+      ansible_network_os == 'nxos' or
+      ansible_network_os == 'ios'
+    msg: "Network device OS not defined or not supported by this role: {{ ansible_network_os }}"
+
+
+- name: Configure nxos vpc global settings
+  nxos_vpc:
+    domain: "{{ vpc.domain | default('1') }}"
+    state: "{{ vpc.state | default(omit) }}"
+    role_priority: "{{ vpc.role_priority | default(omit) }}"
+    system_priority: "{{ vpc.system_priority | default(omit) }}"
+    pkl_dest: "{{ vpc.peer_keepalive_dest | default(omit) }}"
+    pkl_src: "{{ vpc.peer_keepalive_src | default(omit) }}"
+    pkl_vrf: "{{ vpc.peer_keepalive_vrf | default(omit) }}"
+    peer_gw: "{{ vpc.peer_gateway | default(omit) }}"
+    auto_recovery: "{{ vpc.auto_recovery | default(omit) }}"
+    delay_restore: "{{ vpc.delay_restore | default(omit) }}"         
+  when: >
+    ansible_network_os == 'nxos' and
+    vpc is defined  
+  tags: 
+    - virtual_chassis_config
+    - nxos
+
+- name: create temp file
+  tempfile:
+    state: file
+    prefix: ansible_
+    suffix: "_{{ inventory_hostname }}"
+  register: network_vc_file
+  notify: delete temp file
+  check_mode: no
+  tags:
+    - virtual_chassis_config
+
+- name: Create virtual chassis config in temp file
+  template:
+    src: "{{ ansible_network_os }}_vc.j2"
+    dest: "{{ network_vc_file.path }}"         
+  tags: 
+    - virtual_chassis_config
+
+- name: display config file content
+  debug: msg="{{ lookup('file', network_vc_file.path).split('\n') }}"
+  when: 
+    - vc_display_config is defined
+    - vc_display_config
+  ignore_errors: true
+  tags: 
+    - virtual_chassis_config 
+
+- name: Push virtual chassis config to nxos
+  nxos_config:
+    src: "{{ network_vc_file.path }}"
+    save_when: modified
+  when: >
+    ansible_network_os == 'nxos'
+  tags: 
+    - virtual_chassis_config

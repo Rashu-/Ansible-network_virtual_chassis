@@ -1,0 +1,10 @@
+---
+
+- name: delete temp file
+  file:
+    path: "{{ network_vc_file.path }}"
+    state: absent
+  check_mode: no  
+  tags: 
+    - virtual_chassis_config  
+

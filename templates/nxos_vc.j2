@@ -1,0 +1,11 @@
+{%- if 'ar_reload_delay' in vpc or 'ip_arp' in vpc -%}
+vpc domain {{ vpc.domain }}{{ "\n" }}
+  {%- if vpc.ar_reload_delay is defined %}
+  auto-recovery reload-delay {{ vpc.ar_reload_delay }}{{ "\n" }}
+  {%- endif -%}
+  {%- if vpc.ip_arp is defined and vpc.ip_arp is sameas true %}
+  ip arp synchronize{{ "\n" }}
+  {%- else %}
+  no ip arp synchronize{{ "\n" }}
+  {%- endif -%}
+{%- endif -%}
