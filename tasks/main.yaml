@@ -10,8 +10,8 @@
 
 - name: Configure nxos vpc global settings
   nxos_vpc:
-    domain: "{{ vpc.domain | default(omit) }}"
-    state: "{{ vpc.state | default(omit) }}"
+    domain: "{{ vpc.domain }}"
+    state: "{{ vpc.state }}"
     role_priority: "{{ vpc.role_priority | default(omit) }}"
     system_priority: "{{ vpc.system_priority | default(omit) }}"
     pkl_dest: "{{ vpc.peer_keepalive_dest | default(omit) }}"
@@ -33,15 +33,17 @@
     prefix: ansible_
     suffix: "_{{ inventory_hostname }}"
   register: network_vc_file
-  notify: delete temp file
   check_mode: no
+  changed_when: false
   tags:
     - virtual_chassis_config
 
 - name: Create virtual chassis config in temp file
   template:
     src: "{{ ansible_network_os }}_vc.j2"
-    dest: "{{ network_vc_file.path }}"         
+    dest: "{{ network_vc_file.path }}"
+  check_mode: no
+  changed_when: false             
   tags: 
     - virtual_chassis_config
 
@@ -51,17 +53,26 @@
     - vc_display_config is defined
     - vc_display_config
   ignore_errors: true
+  check_mode: no  
   tags: 
     - virtual_chassis_config 
 
 - name: Push virtual chassis config to nxos
   nxos_config:
-    src: "{{ network_vc_file.path }}"
-    save_when: modified
+    src: "{{ network_vc_file.path }}"    
   when: >
     ansible_network_os == 'nxos'
   tags: 
     - virtual_chassis_config
+
+- name: delete temp file
+  file:
+    path: "{{ network_vc_file.path }}"
+    state: absent
+  check_mode: no 
+  changed_when: false   
+  tags: 
+    - virtual_chassis_config     
 
 - name: Configure vPC peerlink 
   nxos_vpc_interface: 
