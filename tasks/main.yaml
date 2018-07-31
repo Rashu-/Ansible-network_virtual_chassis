@@ -76,13 +76,13 @@
 
 - name: Configure vPC peerlink 
   nxos_vpc_interface: 
-    portchannel: "{{ item.value.name | regex_replace('port-channel') }}"
-    state: "{{ item.value.vpc_peer.state | default('present') }}"
-    peer_link: "{{ item.value.vpc_peer.link | default(omit) }}"
-  with_dict: "{{ interfaces }}"
+    portchannel: "{{ item.name | regex_replace('port-channel') }}"
+    state: "{{ item.vpc_peer.state | default(omit) }}"
+    peer_link: "{{ item.vpc_peer.link | default(omit) }}"
+  loop: "{{ interfaces | net_int_filter }}"
   when: >
     ansible_network_os == 'nxos' and    
-    item.value.vpc_peer is defined
+    item.vpc_peer is defined
   tags: 
     - virtual_chassis_config
     - nxos
